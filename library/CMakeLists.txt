@@ -49,14 +49,16 @@ source_group("Header Files\\Public" FILES ${hipsparse_headers_public})
 include(src/CMakeLists.txt)
 
 if (NOT WIN32)
-# Set Fortran module output directory
-set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/include/hipsparse)
+  # Set Fortran module output directory
+  set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/include/hipsparse)
 
-# Create hipSPARSE Fortran module
-add_library(hipsparse_fortran OBJECT ${hipsparse_fortran_source})
+  if (NOT USE_CHIP)
+    # Create hipSPARSE Fortran module
+    add_library(hipsparse_fortran OBJECT ${hipsparse_fortran_source})
 
-# Target compile options
-target_compile_options(hipsparse_fortran PRIVATE -std=f2003 -ffree-form -cpp)
+    # Target compile options
+    target_compile_options(hipsparse_fortran PRIVATE -std=f2003 -ffree-form -cpp)
+  endif()
 endif()
 
 # Create hipSPARSE library
@@ -82,7 +84,9 @@ target_include_directories(hipsparse
 
 if(NOT USE_CUDA)
   target_link_libraries(hipsparse PUBLIC hip::host)
-  target_link_libraries(hipsparse PRIVATE roc::rocsparse)
+  if (NOT USE_CHIP)
+    target_link_libraries(hipsparse PRIVATE roc::rocsparse)
+  endif()
 else()
   target_compile_definitions(hipsparse PUBLIC __HIP_PLATFORM_NVIDIA__)
   target_include_directories(hipsparse
@@ -170,10 +174,12 @@ endif()
 
 # Export targets
 if(NOT USE_CUDA)
-  rocm_export_targets(TARGETS roc::hipsparse
-                      DEPENDS PACKAGE hip
-                      STATIC_DEPENDS PACKAGE rocsparse
-                      NAMESPACE roc::)
+  if(NOT USE_CHIP)
+    rocm_export_targets(TARGETS roc::hipsparse
+                        DEPENDS PACKAGE hip
+                        STATIC_DEPENDS PACKAGE rocsparse
+                        NAMESPACE roc::)
+  endif()
 else()
   rocm_export_targets(TARGETS roc::hipsparse
                       NAMESPACE roc::)

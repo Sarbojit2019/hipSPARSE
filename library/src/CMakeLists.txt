@@ -22,7 +22,10 @@
 # ########################################################################
 
 # hipSPARSE source
-if(NOT USE_CUDA)
+if (USE_CHIP)
+  # hipSPARSE source
+  set(hipsparse_source src/intel_detail/hipsparse.cpp)
+elseif(NOT USE_CUDA)
   # hipSPARSE source
   set(hipsparse_source src/amd_detail/hipsparse.cpp)
 else()
@@ -30,5 +33,7 @@ else()
   set(hipsparse_source src/nvidia_detail/hipsparse.cpp)
 endif()
 
-# hipSPARSE Fortran source
-set(hipsparse_fortran_source src/hipsparse.f90 src/hipsparse_enums.f90)
+if (NOT USE_CHIP)
+  # hipSPARSE Fortran source
+  set(hipsparse_fortran_source src/hipsparse.f90 src/hipsparse_enums.f90)
+endif()

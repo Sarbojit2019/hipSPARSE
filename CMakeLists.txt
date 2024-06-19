@@ -36,7 +36,7 @@ else()
 endif()
 
 # Pick up static and dynamic shared object files
-list( APPEND CMAKE_PREFIX_PATH ${ROCM_PATH}/lib/cmake/hip /opt/rocm /opt/rocm/llvm /opt/rocm/hip )
+list( APPEND CMAKE_PREFIX_PATH ${ROCM_PATH}/lib/cmake/hip ${ROCM_PATH} ${ROCM_PATH}/llvm ${ROCM_PATH}/hip )
 
 # CMake modules
 list(APPEND CMAKE_MODULE_PATH
@@ -74,7 +74,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Build options
 option(BUILD_SHARED_LIBS "Build hipSPARSE as a shared library" ON)
 option(BUILD_CLIENTS_TESTS "Build tests (requires googletest)" OFF)
-option(BUILD_CLIENTS_SAMPLES "Build examples" ON)
+option(BUILD_CLIENTS_SAMPLES "Build examples" OFF)
 option(BUILD_VERBOSE "Output additional build information" OFF)
 option(USE_CUDA "Build hipSPARSE using CUDA backend" OFF)
 option(BUILD_CUDA "Build hipSPARSE using CUDA backend" OFF)
@@ -114,7 +114,7 @@ endif()
 
 
 # Setup version
-rocm_setup_version(VERSION 3.1.1)
+#rocm_setup_version(VERSION 3.1.1)
 set(hipsparse_SOVERSION 1.1.0)
 
 # hipSPARSE library
@@ -154,12 +154,14 @@ if(BUILD_CLIENTS_SAMPLES OR BUILD_CLIENTS_TESTS)
   endif()
 endif()
 
-# Package specific CPACK vars
-if(NOT USE_CUDA)
-  rocm_package_add_dependencies(DEPENDS "rocsparse >= 1.12.10")
+if (NOT USE_CHIP)
+  # Package specific CPACK vars
+  if(NOT USE_CUDA)
+    rocm_package_add_dependencies(DEPENDS "rocsparse >= 1.12.10")
+  endif()
+  set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md")
+  set(CPACK_RPM_PACKAGE_LICENSE "MIT")
 endif()
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md")
-set(CPACK_RPM_PACKAGE_LICENSE "MIT")
 
 if(WIN32)
   set(CPACK_SOURCE_GENERATOR "ZIP")
@@ -186,16 +188,18 @@ endif()
 
 set(HIPSPARSE_CONFIG_DIR "\${CPACK_PACKAGING_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" CACHE PATH "Path placed into ldconfig file")
 
-rocm_create_package(
-  NAME ${package_name}
-  DESCRIPTION "ROCm SPARSE library"
-  MAINTAINER "hipSPARSE Maintainer <hipsparse-maintainer@amd.com>"
-  LDCONFIG
-  LDCONFIG_DIR ${HIPSPARSE_CONFIG_DIR})
+if (NOT USE_CHIP)
+  rocm_create_package(
+    NAME ${package_name}
+    DESCRIPTION "ROCm SPARSE library"
+    MAINTAINER "hipSPARSE Maintainer <hipsparse-maintainer@amd.com>"
+    LDCONFIG
+    LDCONFIG_DIR ${HIPSPARSE_CONFIG_DIR})
 
-# Build docs
-if(BUILD_DOCS)
-add_subdirectory(docs)
+  # Build docs
+  if(BUILD_DOCS)
+  add_subdirectory(docs)
+  endif()
 endif()
 
 #
